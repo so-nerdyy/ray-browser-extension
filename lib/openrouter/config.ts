@@ -8,7 +8,7 @@ export const OPENROUTER_CONFIG = {
   CHAT_ENDPOINT: '/chat/completions',
   
   // Model configuration
-  DEFAULT_MODEL: 'gpt-oss-120b:free',
+  DEFAULT_MODEL: 'z-ai/glm-4.5-air:free',
   DEFAULT_TEMPERATURE: 0.7,
   DEFAULT_MAX_TOKENS: 2048,
   
