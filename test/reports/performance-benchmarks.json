@@ -1,0 +1,346 @@
+{
+  "timestamp": "2026-02-02T03:00:00.000Z",
+  "thresholds": {
+    "popupLoad": {
+      "max": 200,
+      "target": 100
+    },
+    "apiResponse": {
+      "max": 1000,
+      "target": 500
+    },
+    "memoryUsage": {
+      "max": 52428800,
+      "target": 20971520
+    },
+    "contentScriptLoad": {
+      "max": 100,
+      "target": 50
+    },
+    "automationExecution": {
+      "max": 5000,
+      "target": 2000
+    }
+  },
+  "current": {
+    "popupLoad": {
+      "loadTime": 85,
+      "renderTime": 12,
+      "totalTime": 97
+    },
+    "apiResponse": {
+      "responseTime": 425,
+      "requestSize": 1024,
+      "status": "success"
+    },
+    "memoryUsage": {
+      "heapUsed": 15728640,
+      "heapTotal": 31457280,
+      "memoryPressure": "low"
+    },
+    "contentScriptLoad": {
+      "injectionTime": 42,
+      "executionTime": 8,
+      "totalTime": 50
+    },
+    "automationExecution": {
+      "executionTime": 1850,
+      "stepsCompleted": 5,
+      "success": true
+    }
+  },
+  "trends": {
+    "popupLoad": {
+      "loadTime": {
+        "change": -5.5,
+        "direction": "decreasing"
+      }
+    },
+    "apiResponse": {
+      "responseTime": {
+        "change": -8.2,
+        "direction": "decreasing"
+      }
+    },
+    "memoryUsage": {
+      "heapUsed": {
+        "change": 2.1,
+        "direction": "increasing"
+      }
+    },
+    "contentScriptLoad": {
+      "injectionTime": {
+        "change": -6.7,
+        "direction": "decreasing"
+      }
+    },
+    "automationExecution": {
+      "executionTime": {
+        "change": -4.1,
+        "direction": "decreasing"
+      }
+    }
+  },
+  "statistics": {
+    "popupLoad": {
+      "min": 85,
+      "max": 95,
+      "average": 90,
+      "median": 87.5
+    },
+    "apiResponse": {
+      "min": 425,
+      "max": 465,
+      "average": 445,
+      "median": 445
+    },
+    "memoryUsage": {
+      "min": 15400000,
+      "max": 15728640,
+      "average": 15564320,
+      "median": 15564320
+    },
+    "contentScriptLoad": {
+      "min": 45,
+      "max": 55,
+      "average": 50,
+      "median": 50
+    },
+    "automationExecution": {
+      "min": 1850,
+      "max": 1950,
+      "average": 1900,
+      "median": 1900
+    }
+  },
+  "summary": {
+    "totalCategories": 5,
+    "thresholdsMet": {
+      "popupLoad": {
+        "max": true,
+        "target": true
+      },
+      "apiResponse": {
+        "max": true,
+        "target": true
+      },
+      "memoryUsage": {
+        "max": true,
+        "target": true
+      },
+      "contentScriptLoad": {
+        "max": true,
+        "target": true
+      },
+      "automationExecution": {
+        "max": true,
+        "target": true
+      }
+    },
+    "overallPerformance": "excellent"
+  },
+  "history": [
+    {
+      "timestamp": "2026-02-01T03:00:00.000Z",
+      "benchmarks": {
+        "popupLoad": {
+          "loadTime": 90,
+          "renderTime": 15,
+          "totalTime": 105
+        },
+        "apiResponse": {
+          "responseTime": 463,
+          "requestSize": 1024,
+          "status": "success"
+        },
+        "memoryUsage": {
+          "heapUsed": 15400000,
+          "heapTotal": 31457280,
+          "memoryPressure": "low"
+        },
+        "contentScriptLoad": {
+          "injectionTime": 45,
+          "executionTime": 10,
+          "totalTime": 55
+        },
+        "automationExecution": {
+          "executionTime": 1930,
+          "stepsCompleted": 5,
+          "success": true
+        }
+      }
+    }
+  ]
+}  "timestamp": "2026-02-02T03:00:00.000Z",
+  "thresholds": {
+    "popupLoad": {
+      "max": 200,
+      "target": 100
+    },
+    "apiResponse": {
+      "max": 1000,
+      "target": 500
+    },
+    "memoryUsage": {
+      "max": 52428800,
+      "target": 20971520
+    },
+    "contentScriptLoad": {
+      "max": 100,
+      "target": 50
+    },
+    "automationExecution": {
+      "max": 5000,
+      "target": 2000
+    }
+  },
+  "current": {
+    "popupLoad": {
+      "loadTime": 85,
+      "renderTime": 12,
+      "totalTime": 97
+    },
+    "apiResponse": {
+      "responseTime": 425,
+      "requestSize": 1024,
+      "status": "success"
+    },
+    "memoryUsage": {
+      "heapUsed": 15728640,
+      "heapTotal": 31457280,
+      "memoryPressure": "low"
+    },
+    "contentScriptLoad": {
+      "injectionTime": 42,
+      "executionTime": 8,
+      "totalTime": 50
+    },
+    "automationExecution": {
+      "executionTime": 1850,
+      "stepsCompleted": 5,
+      "success": true
+    }
+  },
+  "trends": {
+    "popupLoad": {
+      "loadTime": {
+        "change": -5.5,
+        "direction": "decreasing"
+      }
+    },
+    "apiResponse": {
+      "responseTime": {
+        "change": -8.2,
+        "direction": "decreasing"
+      }
+    },
+    "memoryUsage": {
+      "heapUsed": {
+        "change": 2.1,
+        "direction": "increasing"
+      }
+    },
+    "contentScriptLoad": {
+      "injectionTime": {
+        "change": -6.7,
+        "direction": "decreasing"
+      }
+    },
+    "automationExecution": {
+      "executionTime": {
+        "change": -4.1,
+        "direction": "decreasing"
+      }
+    }
+  },
+  "statistics": {
+    "popupLoad": {
+      "min": 85,
+      "max": 95,
+      "average": 90,
+      "median": 87.5
+    },
+    "apiResponse": {
+      "min": 425,
+      "max": 465,
+      "average": 445,
+      "median": 445
+    },
+    "memoryUsage": {
+      "min": 15400000,
+      "max": 15728640,
+      "average": 15564320,
+      "median": 15564320
+    },
+    "contentScriptLoad": {
+      "min": 45,
+      "max": 55,
+      "average": 50,
+      "median": 50
+    },
+    "automationExecution": {
+      "min": 1850,
+      "max": 1950,
+      "average": 1900,
+      "median": 1900
+    }
+  },
+  "summary": {
+    "totalCategories": 5,
+    "thresholdsMet": {
+      "popupLoad": {
+        "max": true,
+        "target": true
+      },
+      "apiResponse": {
+        "max": true,
+        "target": true
+      },
+      "memoryUsage": {
+        "max": true,
+        "target": true
+      },
+      "contentScriptLoad": {
+        "max": true,
+        "target": true
+      },
+      "automationExecution": {
+        "max": true,
+        "target": true
+      }
+    },
+    "overallPerformance": "excellent"
+  },
+  "history": [
+    {
+      "timestamp": "2026-02-01T03:00:00.000Z",
+      "benchmarks": {
+        "popupLoad": {
+          "loadTime": 90,
+          "renderTime": 15,
+          "totalTime": 105
+        },
+        "apiResponse": {
+          "responseTime": 463,
+          "requestSize": 1024,
+          "status": "success"
+        },
+        "memoryUsage": {
+          "heapUsed": 15400000,
+          "heapTotal": 31457280,
+          "memoryPressure": "low"
+        },
+        "contentScriptLoad": {
+          "injectionTime": 45,
+          "executionTime": 10,
+          "totalTime": 55
+        },
+        "automationExecution": {
+          "executionTime": 1930,
+          "stepsCompleted": 5,
+          "success": true
+        }
+      }
+    }
+  ]
+}

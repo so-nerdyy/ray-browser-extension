@@ -1,0 +1,188 @@
+{
+  "timestamp": "2026-02-02T03:00:00.000Z",
+  "thresholds": {
+    "high": 0,
+    "medium": 2,
+    "low": 5,
+    "info": 10
+  },
+  "summary": {
+    "totalVulnerabilities": 3,
+    "vulnerabilityCounts": {
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "info": 0
+    },
+    "thresholdsMet": {
+      "high": true,
+      "medium": true,
+      "low": true,
+      "info": true
+    },
+    "overallSecurity": "secure"
+  },
+  "testResults": true,
+  "dependencyAudit": {
+    "metadata": {
+      "vulnerabilities": {
+        "crypto-js": 1
+      }
+    },
+    "vulnerabilities": {
+      "crypto-js": {
+        "name": "crypto-js",
+        "severity": "medium",
+        "title": "Prototype Pollution",
+        "url": "https://github.com/advisories/GHSA-9v47-jmw2-4v66",
+        "severity": "medium",
+        "range": "<4.2.0",
+        "fixAvailable": true,
+        "fixedVersion": "4.2.0"
+      }
+    }
+  },
+  "codeAnalysis": {
+    "issues": [
+      {
+        "file": "src/content-script.js",
+        "type": "medium",
+        "description": "Direct innerHTML assignment detected",
+        "recommendation": "Use textContent or sanitize HTML before assignment",
+        "occurrences": 1
+      },
+      {
+        "file": "src/background.js",
+        "type": "low",
+        "description": "localStorage usage detected",
+        "recommendation": "Consider using chrome.storage.local for extension data",
+        "occurrences": 2
+      }
+    ],
+    "totalIssues": 2
+  },
+  "permissionAnalysis": {
+    "permissions": [
+      "storage",
+      "activeTab",
+      "scripting"
+    ],
+    "optionalPermissions": [],
+    "hostPermissions": [
+      "https://api.openrouter.ai/*"
+    ],
+    "issues": []
+  },
+  "cspValidation": {
+    "valid": true,
+    "csp": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openrouter.ai; style-src 'self' 'unsafe-inline';",
+    "issues": []
+  },
+  "recommendations": [
+    {
+      "priority": "medium",
+      "category": "Dependencies",
+      "description": "Update dependencies to fix security vulnerabilities",
+      "action": "Run npm audit fix to update vulnerable packages"
+    },
+    {
+      "priority": "medium",
+      "category": "Code Security",
+      "description": "Address potential security issues in source code",
+      "action": "Review and fix identified security patterns in the codebase"
+    }
+  ]
+}  "timestamp": "2026-02-02T03:00:00.000Z",
+  "thresholds": {
+    "high": 0,
+    "medium": 2,
+    "low": 5,
+    "info": 10
+  },
+  "summary": {
+    "totalVulnerabilities": 3,
+    "vulnerabilityCounts": {
+      "high": 0,
+      "medium": 1,
+      "low": 2,
+      "info": 0
+    },
+    "thresholdsMet": {
+      "high": true,
+      "medium": true,
+      "low": true,
+      "info": true
+    },
+    "overallSecurity": "secure"
+  },
+  "testResults": true,
+  "dependencyAudit": {
+    "metadata": {
+      "vulnerabilities": {
+        "crypto-js": 1
+      }
+    },
+    "vulnerabilities": {
+      "crypto-js": {
+        "name": "crypto-js",
+        "severity": "medium",
+        "title": "Prototype Pollution",
+        "url": "https://github.com/advisories/GHSA-9v47-jmw2-4v66",
+        "severity": "medium",
+        "range": "<4.2.0",
+        "fixAvailable": true,
+        "fixedVersion": "4.2.0"
+      }
+    }
+  },
+  "codeAnalysis": {
+    "issues": [
+      {
+        "file": "src/content-script.js",
+        "type": "medium",
+        "description": "Direct innerHTML assignment detected",
+        "recommendation": "Use textContent or sanitize HTML before assignment",
+        "occurrences": 1
+      },
+      {
+        "file": "src/background.js",
+        "type": "low",
+        "description": "localStorage usage detected",
+        "recommendation": "Consider using chrome.storage.local for extension data",
+        "occurrences": 2
+      }
+    ],
+    "totalIssues": 2
+  },
+  "permissionAnalysis": {
+    "permissions": [
+      "storage",
+      "activeTab",
+      "scripting"
+    ],
+    "optionalPermissions": [],
+    "hostPermissions": [
+      "https://api.openrouter.ai/*"
+    ],
+    "issues": []
+  },
+  "cspValidation": {
+    "valid": true,
+    "csp": "script-src 'self'; object-src 'self'; connect-src 'self' https://api.openrouter.ai; style-src 'self' 'unsafe-inline';",
+    "issues": []
+  },
+  "recommendations": [
+    {
+      "priority": "medium",
+      "category": "Dependencies",
+      "description": "Update dependencies to fix security vulnerabilities",
+      "action": "Run npm audit fix to update vulnerable packages"
+    },
+    {
+      "priority": "medium",
+      "category": "Code Security",
+      "description": "Address potential security issues in source code",
+      "action": "Review and fix identified security patterns in the codebase"
+    }
+  ]
+}

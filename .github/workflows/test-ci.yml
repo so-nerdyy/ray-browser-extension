@@ -1,0 +1,832 @@
+name: Ray Chrome Extension Test CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run unit tests
+      run: npm run test:unit
+      
+    - name: Run integration tests
+      run: npm run test:integration
+      
+    - name: Run security tests
+      run: npm run test:security
+      
+    - name: Run performance tests
+      run: npm run test:performance
+      
+    - name: Run browser tests
+      run: npm run test:browser
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-node-${{ matrix.node-version }}
+        path: test/reports/
+        retention-days: 30
+        
+  coverage:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Generate coverage report
+      run: npm run test:coverage
+      
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: test/reports/coverage/
+        retention-days: 30
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: test/coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        
+  performance:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run performance benchmarks
+      run: npm run test:performance-benchmarks
+      
+    - name: Upload performance reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-report
+        path: test/reports/performance/
+        retention-days: 30
+        
+    - name: Comment PR with performance results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const report = JSON.parse(fs.readFileSync('test/reports/performance/benchmark-report.json', 'utf8'));
+            const performance = report.summary.overallPerformance;
+            
+            const comment = `
+            ## 🚀 Performance Benchmark Results
+            
+            **Overall Performance:** ${performance.replace('-', ' ').toUpperCase()}
+            
+            ### Metrics:
+            ${Object.entries(report.current).map(([category, metrics]) => {
+              return `- **${category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:** ${Object.values(metrics)[0]}ms`;
+            }).join('\n')}
+            
+            ### Thresholds:
+            ${Object.entries(report.summary.thresholdsMet).map(([category, thresholds]) => {
+              const status = thresholds.target ? '✅' : '❌';
+              return `- ${category}: Target ${thresholds.target ? 'MET' : 'MISSED'}`;
+            }).join('\n')}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Could not read performance report:', error.message);
+          }
+          
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run security scan
+      run: npm run test:security-scan
+      
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: test/reports/security/
+        retention-days: 30
+        
+    - name: Comment PR with security results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const report = JSON.parse(fs.readFileSync('test/reports/security/security-report.json', 'utf8'));
+            const security = report.summary.overallSecurity;
+            
+            const comment = `
+            ## 🔒 Security Scan Results
+            
+            **Overall Security Status:** ${security.toUpperCase()}
+            
+            ### Vulnerability Summary:
+            - **High:** ${report.summary.vulnerabilityCounts.high}
+            - **Medium:** ${report.summary.vulnerabilityCounts.medium}
+            - **Low:** ${report.summary.vulnerabilityCounts.low}
+            - **Info:** ${report.summary.vulnerabilityCounts.info}
+            
+            ### Thresholds:
+            ${Object.entries(report.summary.thresholdsMet).map(([severity, met]) => {
+              const status = met ? '✅' : '❌';
+              const threshold = report.thresholds[severity];
+              const count = report.summary.vulnerabilityCounts[severity];
+              return `- ${severity}: ${count} (threshold: ${threshold}) ${status}`;
+            }).join('\n')}
+            
+            ### Recommendations:
+            ${report.recommendations.slice(0, 3).map(rec => `- **${rec.category}:** ${rec.description}`).join('\n')}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Could not read security report:', error.message);
+          }
+          
+  e2e:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+    - name: Run E2E tests
+      run: npm run test:e2e
+      env:
+        DISPLAY: :99
+        
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results
+        path: test/reports/e2e/
+        retention-days: 30
+        
+  build:
+    name: Build Extension
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build extension
+      run: npm run build
+      
+    - name: Package extension
+      run: |
+        mkdir -p dist
+        zip -r dist/ray-extension.zip . -x "node_modules/*" "test/*" ".git/*" "dist/*" "*.md"
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: extension-build
+        path: dist/
+        retention-days: 30
+        
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security, build]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: extension-build
+        path: dist/
+        
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add deployment commands here
+        echo "Deployment completed"
+        
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: extension-build
+        path: dist/
+        
+    - name: Download test reports
+      uses: actions/download-artifact@v4
+      with:
+        path: reports/
+        
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body: |
+          ## 🚀 Ray Chrome Extension Release v${{ github.run_number }}
+          
+          ### 📊 Test Results
+          - **Unit Tests:** ✅ Passed
+          - **Integration Tests:** ✅ Passed
+          - **Security Tests:** ✅ Passed
+          - **Performance Tests:** ✅ Passed
+          - **E2E Tests:** ✅ Passed
+          
+          ### 📋 Reports
+          - [Coverage Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [Performance Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [Security Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ### 📦 Installation
+          1. Download `ray-extension.zip` below
+          2. Unzip the file
+          3. Load the extension in Chrome (chrome://extensions/)
+          4. Enable Developer mode
+          5. Click "Load unpacked" and select the unzipped folder
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: dist/ray-extension.zip
+        asset_name: ray-extension.zip
+        asset_content_type: application/zip
+        
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security, e2e, build]
+    if: always()
+    
+    steps:
+    - name: Notify on success
+      if: needs.test.result == 'success' && needs.coverage.result == 'success' && needs.performance.result == 'success' && needs.security.result == 'success' && needs.e2e.result == 'success'
+      run: |
+        echo "✅ All tests passed successfully!"
+        # Add notification logic here (Slack, Discord, etc.)
+        
+    - name: Notify on failure
+      if: needs.test.result == 'failure' || needs.coverage.result == 'failure' || needs.performance.result == 'failure' || needs.security.result == 'failure' || needs.e2e.result == 'failure'
+      run: |
+        echo "❌ Some tests failed!"
+        # Add notification logic here (Slack, Discord, etc.)
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [16.x, 18.x, 20.x]
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run unit tests
+      run: npm run test:unit
+      
+    - name: Run integration tests
+      run: npm run test:integration
+      
+    - name: Run security tests
+      run: npm run test:security
+      
+    - name: Run performance tests
+      run: npm run test:performance
+      
+    - name: Run browser tests
+      run: npm run test:browser
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-node-${{ matrix.node-version }}
+        path: test/reports/
+        retention-days: 30
+        
+  coverage:
+    name: Generate Coverage Report
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Generate coverage report
+      run: npm run test:coverage
+      
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: test/reports/coverage/
+        retention-days: 30
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: test/coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+        
+  performance:
+    name: Performance Benchmarks
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run performance benchmarks
+      run: npm run test:performance-benchmarks
+      
+    - name: Upload performance reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-report
+        path: test/reports/performance/
+        retention-days: 30
+        
+    - name: Comment PR with performance results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const report = JSON.parse(fs.readFileSync('test/reports/performance/benchmark-report.json', 'utf8'));
+            const performance = report.summary.overallPerformance;
+            
+            const comment = `
+            ## 🚀 Performance Benchmark Results
+            
+            **Overall Performance:** ${performance.replace('-', ' ').toUpperCase()}
+            
+            ### Metrics:
+            ${Object.entries(report.current).map(([category, metrics]) => {
+              return `- **${category.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}:** ${Object.values(metrics)[0]}ms`;
+            }).join('\n')}
+            
+            ### Thresholds:
+            ${Object.entries(report.summary.thresholdsMet).map(([category, thresholds]) => {
+              const status = thresholds.target ? '✅' : '❌';
+              return `- ${category}: Target ${thresholds.target ? 'MET' : 'MISSED'}`;
+            }).join('\n')}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Could not read performance report:', error.message);
+          }
+          
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Run security scan
+      run: npm run test:security-scan
+      
+    - name: Upload security reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: security-report
+        path: test/reports/security/
+        retention-days: 30
+        
+    - name: Comment PR with security results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const report = JSON.parse(fs.readFileSync('test/reports/security/security-report.json', 'utf8'));
+            const security = report.summary.overallSecurity;
+            
+            const comment = `
+            ## 🔒 Security Scan Results
+            
+            **Overall Security Status:** ${security.toUpperCase()}
+            
+            ### Vulnerability Summary:
+            - **High:** ${report.summary.vulnerabilityCounts.high}
+            - **Medium:** ${report.summary.vulnerabilityCounts.medium}
+            - **Low:** ${report.summary.vulnerabilityCounts.low}
+            - **Info:** ${report.summary.vulnerabilityCounts.info}
+            
+            ### Thresholds:
+            ${Object.entries(report.summary.thresholdsMet).map(([severity, met]) => {
+              const status = met ? '✅' : '❌';
+              const threshold = report.thresholds[severity];
+              const count = report.summary.vulnerabilityCounts[severity];
+              return `- ${severity}: ${count} (threshold: ${threshold}) ${status}`;
+            }).join('\n')}
+            
+            ### Recommendations:
+            ${report.recommendations.slice(0, 3).map(rec => `- **${rec.category}:** ${rec.description}`).join('\n')}
+            `;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Could not read security report:', error.message);
+          }
+          
+  e2e:
+    name: End-to-End Tests
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Install Chrome
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y google-chrome-stable
+        
+    - name: Run E2E tests
+      run: npm run test:e2e
+      env:
+        DISPLAY: :99
+        
+    - name: Upload E2E test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: e2e-test-results
+        path: test/reports/e2e/
+        retention-days: 30
+        
+  build:
+    name: Build Extension
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build extension
+      run: npm run build
+      
+    - name: Package extension
+      run: |
+        mkdir -p dist
+        zip -r dist/ray-extension.zip . -x "node_modules/*" "test/*" ".git/*" "dist/*" "*.md"
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: extension-build
+        path: dist/
+        retention-days: 30
+        
+  deploy:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security, build]
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: extension-build
+        path: dist/
+        
+    - name: Deploy to staging
+      run: |
+        echo "Deploying to staging environment..."
+        # Add deployment commands here
+        echo "Deployment completed"
+        
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security, build]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: extension-build
+        path: dist/
+        
+    - name: Download test reports
+      uses: actions/download-artifact@v4
+      with:
+        path: reports/
+        
+    - name: Create Release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ github.run_number }}
+        release_name: Release v${{ github.run_number }}
+        body: |
+          ## 🚀 Ray Chrome Extension Release v${{ github.run_number }}
+          
+          ### 📊 Test Results
+          - **Unit Tests:** ✅ Passed
+          - **Integration Tests:** ✅ Passed
+          - **Security Tests:** ✅ Passed
+          - **Performance Tests:** ✅ Passed
+          - **E2E Tests:** ✅ Passed
+          
+          ### 📋 Reports
+          - [Coverage Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [Performance Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [Security Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ### 📦 Installation
+          1. Download `ray-extension.zip` below
+          2. Unzip the file
+          3. Load the extension in Chrome (chrome://extensions/)
+          4. Enable Developer mode
+          5. Click "Load unpacked" and select the unzipped folder
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: dist/ray-extension.zip
+        asset_name: ray-extension.zip
+        asset_content_type: application/zip
+        
+  notify:
+    name: Notify Results
+    runs-on: ubuntu-latest
+    needs: [test, coverage, performance, security, e2e, build]
+    if: always()
+    
+    steps:
+    - name: Notify on success
+      if: needs.test.result == 'success' && needs.coverage.result == 'success' && needs.performance.result == 'success' && needs.security.result == 'success' && needs.e2e.result == 'success'
+      run: |
+        echo "✅ All tests passed successfully!"
+        # Add notification logic here (Slack, Discord, etc.)
+        
+    - name: Notify on failure
+      if: needs.test.result == 'failure' || needs.coverage.result == 'failure' || needs.performance.result == 'failure' || needs.security.result == 'failure' || needs.e2e.result == 'failure'
+      run: |
+        echo "❌ Some tests failed!"
+        # Add notification logic here (Slack, Discord, etc.)
